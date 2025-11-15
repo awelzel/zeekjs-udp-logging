@@ -1,0 +1,3 @@
+[package]
+description = JavaScript based logging via UDP
+script_dir = ./scripts
