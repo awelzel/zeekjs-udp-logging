@@ -52,18 +52,26 @@ const udp_type = process.env.UDP_TYPE || 'udp4';
 
 var ready = false;
 
-const client = dgram.createSocket(udp_type);
-client.on('error', (err) => {
-  console.error(`udp-logging: client error: ${err}`);
-  ready = false;
-});
+function make_client() {
+  console.log(`udp-logging: connecting to ${udp_host}:${udp_port}`);
 
-client.on('connect', (err) => {
-  console.log(`udp-logging: connected to ${udp_host}:${udp_port}`);
-  ready = true;
-});
+  let c = dgram.createSocket(udp_type);
+  c.on('error', (err) => {
+    console.error(`udp-logging: client error: ${err}`);
+    ready = false;
+    client = make_client();
+  });
 
-client.connect(udp_port, udp_host);
+  c.on('connect', (err) => {
+    console.log('udp-logging: ready!');
+    ready = true;
+  });
+
+  c.connect(udp_port, udp_host);
+  return c;
+}
+
+var client = make_client();
 
 // This approximates what LogAscii::use_json=T, selecting only &log
 // fields and flattening the resulting structure.
@@ -88,7 +96,7 @@ zeek.hook('Log::log_stream_policy', (rec, stream_id) => {
   let data = to_json(rec);
   let path = get_default_path(stream_id);
   if (!ready) {
-    console.log('udp-logggin: not ready!');
+    console.error('udp-logging: not ready, discarding write!');
     return;
   }
 
@@ -96,4 +104,9 @@ zeek.hook('Log::log_stream_policy', (rec, stream_id) => {
     if (err)
       console.error(`udp-logging: error sending: ${err}`);
   });
+
+  // Skip the rest of Zeek's logging pipeline. Remove this
+  // return statement if you want Zeek to continue logging
+  // to files.
+  return false;
 });
