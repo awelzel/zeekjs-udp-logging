@@ -37,12 +37,13 @@
  * can always implement a C++ Zeek plugin adding a UDP writer. See the Zeek
  * documentation for more details.
  *
- * This script uses safe-stable-stringify for rendering log records to JSON.
+ * This script uses safe-stable-stringify which is currently vendored
+ * in ./scripts/vendor/safe-stable-stringify. It was fetched via:
  *
  *     npm install safe-stable-stringify@2.5.0
  */
 const dgram = require('node:dgram');
-const stringify = require('safe-stable-stringify').configure({
+const stringify = require('./vendor/safe-stable-stringify').configure({
   deterministic: false,
 });
 
