@@ -1,0 +1,7 @@
+#!/bin/bash
+set -eux
+
+UDP_HOST=${UDP_HOST:-127.0.0.1}
+UDP_PORT=${UDP_PORT:-19514}
+
+nc -v -n -u -k -l "${UDP_HOST}" "${UDP_PORT}"

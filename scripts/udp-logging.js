@@ -49,21 +49,32 @@ const stringify = require('safe-stable-stringify').configure({
 const udp_port = parseInt(process.env.UDP_PORT || '9514');
 const udp_host = process.env.UDP_HOST || '127.0.0.1';
 const udp_type = process.env.UDP_TYPE || 'udp4';
+const udp_delay_ms = process.env.UDP_DELAY_MS || '25';  // discard writes for that many milliseconds on error
 
 var ready = false;
+var stop = false;
 
 function make_client() {
-  console.log(`udp-logging: connecting to ${udp_host}:${udp_port}`);
-
+  console.log(`udp-logging: creating client for ${udp_host}:${udp_port}`);
   let c = dgram.createSocket(udp_type);
+
   c.on('error', (err) => {
     console.error(`udp-logging: client error: ${err}`);
+
+    // Any error results in ready set to false, so we skip sending
+    // logs at that point until we try again
     ready = false;
-    client = make_client();
+
+    // Attempt to resend after 25ms
+    setTimeout(() => {
+      if (stop)
+        return;
+
+      client = make_client();
+    }, udp_delay_ms);
   });
 
   c.on('connect', (err) => {
-    console.log('udp-logging: ready!');
     ready = true;
   });
 
@@ -92,18 +103,30 @@ const get_default_path = (stream_id) => {
   return path_cache[stream_id];
 }
 
+// Count discarded writes and output a summary at zeek_done() time.
+var total_discarded = 0;
+var path_discarded = {}
+
+zeek.on('zeek_done', {priority: -1000}, () => {
+  stop = true
+  if ( total_discarded > 0 )
+    console.error(`udp-logging: Discarded a total of ${total_discarded} writes`);
+
+  for ( const path in path_discarded )
+    console.error(`udp-logging:   ${path}: ${path_discarded[path]}`);
+});
+
 zeek.hook('Log::log_stream_policy', (rec, stream_id) => {
   let data = to_json(rec);
   let path = get_default_path(stream_id);
+
   if (!ready) {
-    console.error('udp-logging: not ready, discarding write!');
+    ++total_discarded;
+    path_discarded[path] = (path_discarded[path] || 0) + 1;
     return;
   }
 
-  client.send(`zeek_filename="${path}"${data}\n`, (err) => {
-    if (err)
-      console.error(`udp-logging: error sending: ${err}`);
-  });
+  client.send(`zeek_filename="${path}"${data}\n`);
 
   // Skip the rest of Zeek's logging pipeline. Remove this
   // return statement if you want Zeek to continue logging
