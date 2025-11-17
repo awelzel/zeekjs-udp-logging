@@ -112,6 +112,12 @@ const get_default_path = (stream_id) => {
   return path_cache[stream_id];
 }
 
+// Hmm, so not 100% sure how this should look like.
+// <14>1 2025-11-17T12:00:00Z myhost myapp 1234 - [meta filename="abc"] ...
+const format_syslog_msg = (path, msg) => {
+  return `<13> zeek_filename="${path}" ${msg}\n`;
+}
+
 // Hook for Log::log_stream_policy.
 //
 // If sending recently failed and the UDP client isn't ready, just
@@ -122,7 +128,9 @@ zeek.hook('Log::log_stream_policy', (rec, stream_id) => {
   if (ready) {
     let path = get_default_path(stream_id);
     let data = to_json(rec);
-    client.send(`zeek_filename="${path}"${data}\n`, (err) => {
+    let msg = format_syslog_msg(path, data);
+
+    client.send(msg, (err) => {
       if (!err)
         ++sent;
     });
