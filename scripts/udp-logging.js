@@ -50,23 +50,31 @@ const stringify = require('./vendor/safe-stable-stringify').configure({
 const udp_port = parseInt(process.env.UDP_PORT || '9514');
 const udp_host = process.env.UDP_HOST || '127.0.0.1';
 const udp_type = process.env.UDP_TYPE || 'udp4';
-const udp_delay_ms = process.env.UDP_DELAY_MS || '25';  // discard writes for that many milliseconds on error
+// Discard writes for that many milliseconds after an error. After the
+// delay expires, a new UDP socket is created.
+const udp_delay_ms = process.env.UDP_DELAY_MS || '100';
 
 var ready = false;
 var stop = false;
+var errors = 0;
+var discarded = 0;
+var sent = 0;
+var total = 0;
 
 function make_client() {
   console.log(`udp-logging: creating client for ${udp_host}:${udp_port}`);
   let c = dgram.createSocket(udp_type);
 
   c.on('error', (err) => {
-    console.error(`udp-logging: client error: ${err}`);
+    ++errors;
+    console.error(`udp-logging: client error: ${err} (total=${total} errors=${errors} discarded=${discarded} sent=${sent})`);
 
     // Any error results in ready set to false, so we skip sending
     // logs at that point until we try again
     ready = false;
 
-    // Attempt to resend after 25ms
+    // Recreate the UDP seconds after a configurable timeout instead
+    // of continuing to send the writes. The timeout is really small.
     setTimeout(() => {
       if (stop)
         return;
@@ -85,8 +93,8 @@ function make_client() {
 
 var client = make_client();
 
-// This approximates what LogAscii::use_json=T, selecting only &log
-// fields and flattening the resulting structure.
+// This approximates what LogAscii::use_json=T should be doing. Log
+// all fields with a &log attribute and flatten the record keys.
 const to_json = (rec) => {
   const log_rec = zeek.select_fields(rec, zeek.ATTR_LOG)
   const flat_rec = zeek.flatten(log_rec)
@@ -96,7 +104,7 @@ const to_json = (rec) => {
 const path_cache = {}
 
 const get_default_path = (stream_id) => {
-  if ( path_cache[stream_id] === undefined ) {
+  if (!path_cache[stream_id]) {
     let filter = zeek.invoke('Log::get_filter', [stream_id, 'default']);
     path_cache[stream_id] = `${filter.path}.log`;
   }
@@ -104,33 +112,32 @@ const get_default_path = (stream_id) => {
   return path_cache[stream_id];
 }
 
-// Count discarded writes and output a summary at zeek_done() time.
-var total_discarded = 0;
-var path_discarded = {}
-
-zeek.on('zeek_done', {priority: -1000}, () => {
-  stop = true
-  if ( total_discarded > 0 )
-    console.error(`udp-logging: Discarded a total of ${total_discarded} writes`);
-
-  for ( const path in path_discarded )
-    console.error(`udp-logging:   ${path}: ${path_discarded[path]}`);
-});
-
+// Hook for Log::log_stream_policy.
+//
+// If sending recently failed and the UDP client isn't ready, just
+// discard this log write.
 zeek.hook('Log::log_stream_policy', (rec, stream_id) => {
-  let data = to_json(rec);
-  let path = get_default_path(stream_id);
+  ++total;
 
-  if (!ready) {
-    ++total_discarded;
-    path_discarded[path] = (path_discarded[path] || 0) + 1;
-    return;
+  if (ready) {
+    let path = get_default_path(stream_id);
+    let data = to_json(rec);
+    client.send(`zeek_filename="${path}"${data}\n`, (err) => {
+      if (!err)
+        ++sent;
+    });
+  } else {
+    ++discarded;
   }
-
-  client.send(`zeek_filename="${path}"${data}\n`);
 
   // Skip the rest of Zeek's logging pipeline. Remove this
   // return statement if you want Zeek to continue logging
   // to files.
   return false;
+});
+
+zeek.on('zeek_done', { priority: -1000 }, () => {
+  console.log(`udp-logging: done: total=${total} errors=${errors} discarded=${discarded} sent=${sent}`);
+
+  stop = true;
 });
