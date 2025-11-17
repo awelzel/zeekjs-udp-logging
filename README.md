@@ -1,5 +1,8 @@
 # zeekjs-udp-logging
 
+
+NOTE NOTE: The format needs input and likely needs fixing. See #3.
+
 ## About
 
 A proof-of-concept JavaScript based UDP logger to integrate
