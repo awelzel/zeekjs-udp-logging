@@ -47,12 +47,12 @@ const stringify = require('./vendor/safe-stable-stringify').configure({
   deterministic: false,
 });
 
-const udp_port = parseInt(process.env.UDP_PORT || '9514');
-const udp_host = process.env.UDP_HOST || '127.0.0.1';
-const udp_type = process.env.UDP_TYPE || 'udp4';
+const udp_port = parseInt(process.env.UDP_LOGGING_PORT || '9514');
+const udp_host = process.env.UDP_LOGGING_HOST || '127.0.0.1';
+const udp_type = process.env.UDP_LOGGING_TYPE || 'udp4';
 // Discard writes for that many milliseconds after an error. After the
 // delay expires, a new UDP socket is created.
-const udp_delay_ms = process.env.UDP_DELAY_MS || '100';
+const udp_delay_ms = process.env.UDP_LOGGING_DELAY_MS || '100';
 
 var ready = false;
 var stop = false;

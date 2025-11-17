@@ -11,6 +11,23 @@ If this doesn't fulfill your performance or reliability requirements, you
 can always implement a C++ Zeek plugin adding a UDP writer. See the Zeek
 documentation for more details.
 
-This script uses safe-stable-stringify for rendering log records to JSON.
+## Installation
 
-    npm install safe-stable-stringify@2.5.0
+    $ zkg install https://github.com/awelzel/zeekjs-udp-logging
+
+## Running
+
+To send all logs to 127.0.0.1:9514, run as follows after installation:
+
+    $ zeek -i <interface> zeekjs-udp-logging
+
+## Configuration
+
+The script currently respects the UDP_LOGGING_HOST and UDP_LOGGING_PORT variables:
+
+    $ export UDP_LOGGING_HOST=192.168.0.1
+    $ export UDP_LOGGING_PORT=19514
+
+    $ zeek -i <interface> zeekjs-udp-logging
+
+For IPV6, set UDP_LOGGING_TYPE to ``udp6``.
