@@ -2,10 +2,8 @@
 
 ## About
 
-A proof-of-concept JavaScript based UDP logger to integrate
-Zeek with Cisco's Secure Network Analytics platform.
-
-See: https://www.cisco.com/c/dam/en/us/td/docs/security/stealthwatch/zeek/7_5_2_Zeek_Configuration_Guide_DV_1_0.pdf
+A proof-of-concept JavaScript based UDP logger to integrate Syslog or
+other UDP-based log receiver systems with Zeek.
 
 If this doesn't fulfill your performance or reliability requirements, you
 can always implement a C++ Zeek plugin adding a UDP log writer component.
@@ -22,7 +20,7 @@ msg being the JSON encoded payload of the log record.
     <85> 1 2025-11-18T09:28:46.710Z zeek zeekjs-udp-logging 1372605 - [zeek_filename="conn.log"] {"ts":1763458065.435613,"uid":"CEvhV93jXZEA5UPcKh","id.orig_h":"192.168.0.109","id.orig_p":49549,"id.resp_h":"192.168.0.1","id.resp_p":1900,"proto":"udp","duration":1.2656450271606445,"orig_bytes":94,"resp_bytes":7278,"conn_state":"SF","local_orig":true,"local_resp":true,"missed_bytes":0,"history":"Dd","orig_pkts":1,"orig_ip_bytes":122,"resp_pkts":17,"resp_ip_bytes":7754,"ip_proto":17}
     <85> 1 2025-11-18T09:28:46.711Z zeek zeekjs-udp-logging 1372605 - [zeek_filename="ssl.log"] {"ts":1763458126.681856,"uid":"Cy4rVk3lxsm8DQh7R1","id.orig_h":"192.168.0.109","id.orig_p":34284,"id.resp_h":"192.0.78.212","id.resp_p":443,"version":"TLSv13","cipher":"TLS_AES_256_GCM_SHA384","curve":"x25519","server_name":"zeek.org","resumed":false,"established":true,"ssl_history":"CsiI"}
 
-This may be compatible with Cisco's SNA system, but hasn't been integration tested yet.
+This may be compatible with [Cisco's SNA](https://www.cisco.com/c/dam/en/us/td/docs/security/stealthwatch/zeek/7_5_2_Zeek_Configuration_Guide_DV_1_0.pdf) system, but hasn't been integration tested yet.
 
 ### Raw JSON
 
