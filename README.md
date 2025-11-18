@@ -30,9 +30,9 @@ Setting ``UDP_LOGGING_FORMAT=raw-json`` allows to change the format to have
 UDP packets contain only the JSON part. Not that you likely want to use a
 "ext func" to extend Zeek's record with the path and write timestamp.
 
-   {"ts":1763459228.086805,"uid":"CT4kMH2Zm7H23mEr5k","id.orig_h":"192.168.0.109","id.orig_p":36862,"id.resp_h":"192.0.78.150","id.resp_p":443,"version":"TLSv13","cipher":"TLS_AES_256_GCM_SHA384","curve":"x25519","server_name":"zeek.org","resumed":false,"established":true,"ssl_history":"CsiI"}
-   {"ts":1763459225.503546,"uid":"CSUYyp49OivWWaenRb","id.orig_h":"192.168.0.109","id.orig_p":36850,"id.resp_h":"192.0.78.150","id.resp_p":443,"proto":"tcp","service":"ssl","duration":0.18991804122924805,"orig_bytes":795,"resp_bytes":163862,"conn_state":"SF","local_orig":true,"local_resp":false,"missed_bytes":0,"history":"ShADadFf","orig_pkts":64,"orig_ip_bytes":3375,"resp_pkts":91,"resp_ip_bytes":167514,"ip_proto":6}
-   {"ts":1763459225.440854,"uid":"CDlZEC3MW7TKfUL3lf","id.orig_h":"192.168.0.109","id.orig_p":46134,"id.resp_h":"192.0.78.212","id.resp_p":80,"proto":"tcp","service":"http","duration":0.2576940059661865,"orig_bytes":71,"resp_bytes":441,"conn_state":"SF","local_orig":true,"local_resp":false,"missed_bytes":0,"history":"ShADadFf","orig_pkts":6,"orig_ip_bytes":331,"resp_pkts":4,"resp_ip_bytes":613,"ip_proto":6}
+    {"ts":1763459228.086805,"uid":"CT4kMH2Zm7H23mEr5k","id.orig_h":"192.168.0.109","id.orig_p":36862,"id.resp_h":"192.0.78.150","id.resp_p":443,"version":"TLSv13","cipher":"TLS_AES_256_GCM_SHA384","curve":"x25519","server_name":"zeek.org","resumed":false,"established":true,"ssl_history":"CsiI"}
+    {"ts":1763459225.503546,"uid":"CSUYyp49OivWWaenRb","id.orig_h":"192.168.0.109","id.orig_p":36850,"id.resp_h":"192.0.78.150","id.resp_p":443,"proto":"tcp","service":"ssl","duration":0.18991804122924805,"orig_bytes":795,"resp_bytes":163862,"conn_state":"SF","local_orig":true,"local_resp":false,"missed_bytes":0,"history":"ShADadFf","orig_pkts":64,"orig_ip_bytes":3375,"resp_pkts":91,"resp_ip_bytes":167514,"ip_proto":6}
+    {"ts":1763459225.440854,"uid":"CDlZEC3MW7TKfUL3lf","id.orig_h":"192.168.0.109","id.orig_p":46134,"id.resp_h":"192.0.78.212","id.resp_p":80,"proto":"tcp","service":"http","duration":0.2576940059661865,"orig_bytes":71,"resp_bytes":441,"conn_state":"SF","local_orig":true,"local_resp":false,"missed_bytes":0,"history":"ShADadFf","orig_pkts":6,"orig_ip_bytes":331,"resp_pkts":4,"resp_ip_bytes":613,"ip_proto":6}
 
 
 ## Installation
