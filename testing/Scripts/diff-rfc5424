@@ -1,0 +1,5 @@
+#!/bin/bash
+
+sed -E 's/}/}\n/g' \
+  | sed -E 's/ [-.:0-9TZ]{24} / <timestamp> /g' \
+  | sed -E 's/zeekjs-udp-logging [0-9]+/zeekjs-udp-logging <pid>/'
