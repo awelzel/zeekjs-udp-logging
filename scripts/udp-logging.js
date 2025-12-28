@@ -52,19 +52,22 @@ const stringify = require('./vendor/safe-stable-stringify').configure({
 const udp_port = parseInt(process.env.UDP_LOGGING_PORT || '9514');
 const udp_host = process.env.UDP_LOGGING_HOST || '127.0.0.1';
 const udp_type = process.env.UDP_LOGGING_TYPE || 'udp4';
-const udp_format = process.env.UDP_LOGGING_FORMAT || 'tagged-rfc5424';
-const udp_suppress_errors_interval_ms = parseInt(process.env.UDP_SUPPRESS_ERRORS_INTERVAL_MS || '1000');
-const udp_skip_logging_framework = parseInt(process.env.UDP_SKIP_LOGGING_FRAMEWORK || '1');
+const udp_format = process.env.UDP_LOGGING_FORMAT || 'cisco-sna-syslog';
+const app_name = process.env.UDP_LOGGING_APP_NAME || 'Zeek';
+const udp_suppress_errors_interval_ms = parseInt(process.env.UDP_LOGGING_SUPPRESS_ERRORS_INTERVAL_MS || '1000');
+const skip_logging_framework = parseInt(process.env.UDP_LOGGING_SKIP_LOGGING_FRAMEWORK || '1');
 
-if (udp_skip_logging_framework !== 1 && udp_skip_logging_framework !== 0 ) {
-  console.error(`udp-logging: UDP_SKIP_LOGGING_FRAMEWORK must be 0 or 1, got '${udp_skip_logging_framework}'`)
+const hostname = zeek.global_vars['Cluster::node'] ? `zeek-${zeek.global_vars['Cluster::node']}` : 'zeek';
+
+if (skip_logging_framework !== 1 && skip_logging_framework !== 0 ) {
+  console.error(`udp-logging: UDP_LOGGING_SKIP_LOGGING_FRAMEWORK must be 0 or 1, got '${skip_logging_framework}'`)
   process.exit(1);
 }
 
 var total = 0;
 var errors = 0;
 
-// Whether to suppores
+// Whether to suppress errors
 var suppress_errors = false;
 
 
@@ -89,24 +92,45 @@ const format_raw_json = (path, rec) => {
 };
 
 
-// zeek_filename tagged RFC-5424 for Cisco SNA.
-//
-const facility = 10; // Security/Authorization
-const severity = 5; // Notice
-const pri = `<${facility * 8 + severity}>`;
-const version = '1';
-const hostname = zeek.global_vars['Cluster::node'] ? `zeek-${zeek.global_vars['Cluster::node']}` : 'zeek';
-const app_name = 'zeekjs-udp-logging';
-const procid = `${process.pid}`;
-const msgid = '-';
-
 const sd_escape_value = (value) => {
   return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\]/g, '\\]');
 }
 
+
+/**
+ * Cisco SNA Syslog format as figured out by @medtemo
+ * on issue https://github.com/awelzel/zeekjs-udp-logging/issues/3.
+ */
+const format_cisco_sna_syslog = (path, rec) => {
+  let facility = 19; // Local Facility
+  let severity = 6; // Informational
+  let pri = `<${facility * 8 + severity}>`;
+  let version = '1';
+  let procid = '-';
+  let msgid = '-';
+  // Replace the last Z for usec precision and a UTC offset (2025-12-28T14:26:50.285Z)
+  let ts = (new Date()).toISOString().replace("Z", "000+00:00")
+  let sd = '-';  // empty structured data
+  let header = `${pri}${version} ${ts} ${hostname} ${app_name} ${procid} ${msgid} ${sd}`
+
+  let tag = `zeek_filename="${sd_escape_value(path)}.log"`
+
+  let jsonl = to_json(rec);
+
+  return `${header} ${tag} ${jsonl}\n`;
+};
+
 const format_tagged_rfc5424 = (path, rec) => {
+// zeek_filename as structured data RFC-5424
+  let facility = 10; // Security/Authorization
+  let severity = 5; // Notice
+  let pri = `<${facility * 8 + severity}>`;
+  let version = '1';
+  let procid = `${process.pid}`;
+  let msgid = '-';
+
   let ts = new Date().toISOString();
-  let header = `${pri} ${version} ${ts} ${hostname} ${app_name} ${procid} ${msgid}`
+  let header = `${pri}${version} ${ts} ${hostname} ${app_name} ${procid} ${msgid}`
 
   // Hard-coded structured data.
   let sd = `[zeek_filename="${sd_escape_value(path)}.log"]`
@@ -118,6 +142,7 @@ const format_tagged_rfc5424 = (path, rec) => {
 
 // Supported formatters.
 const formatters = {
+  'cisco-sna-syslog': format_cisco_sna_syslog,
   'raw-json': format_raw_json,
   'tagged-rfc5424': format_tagged_rfc5424,
 }
@@ -175,7 +200,7 @@ zeek.hook('Log::log_stream_policy', (rec, stream_id) => {
   // Returning true means Zeek will process this record,
   // returning false is like break, skipping the remaining
   // logging pipeline implemented in Zeek.
-  return udp_skip_logging_framework == 0;
+  return skip_logging_framework == 0;
 });
 
 // Output a summary on shutdown.

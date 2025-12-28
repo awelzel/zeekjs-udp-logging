@@ -4,7 +4,7 @@
 #
 # @TEST-EXEC: zeek --parse-only %INPUT
 # @TEST-EXEC: btest-bg-run nc 'run-nc-udp-listen > ../nc.log'
-# @TEST-EXEC: btest-bg-run zeek 'UDP_SKIP_LOGGING_FRAMEWORK=0 zeek -b %INPUT $PACKAGE >../zeek.out 2>&1'
+# @TEST-EXEC: btest-bg-run zeek 'UDP_LOGGING_FORMAT=tagged-rfc5424 UDP_LOGGING_SKIP_LOGGING_FRAMEWORK=0 zeek -b %INPUT $PACKAGE >../zeek.out 2>&1'
 # @TEST-EXEC: btest-bg-wait -k 1
 # @TEST-EXEC: btest-diff zeek.out
 # @TEST-EXEC: zeek-cut -m < zeek/test.log > test.log
