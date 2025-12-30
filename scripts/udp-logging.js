@@ -57,6 +57,14 @@ const app_name = process.env.UDP_LOGGING_APP_NAME || 'Zeek';
 const udp_suppress_errors_interval_ms = parseInt(process.env.UDP_LOGGING_SUPPRESS_ERRORS_INTERVAL_MS || '1000');
 const skip_logging_framework = parseInt(process.env.UDP_LOGGING_SKIP_LOGGING_FRAMEWORK || '1');
 
+// Value to prefix zeek_filename with when using the cisco-sna-syslog format.
+// See https://github.com/awelzel/zeekjs-udp-logging/issues/3#issuecomment-3698924442
+var zeek_filename_prefix = '/var/zeek/logs/current/';
+
+if ( process.env.UDP_LOGGING_ZEEK_FILENAME_PREFIX !== undefined ) {
+  zeek_filename_prefix = process.env.UDP_LOGGING_ZEEK_FILENAME_PREFIX;
+}
+
 const hostname = zeek.global_vars['Cluster::node'] ? `zeek-${zeek.global_vars['Cluster::node']}` : 'zeek';
 
 if (skip_logging_framework !== 1 && skip_logging_framework !== 0 ) {
@@ -113,7 +121,7 @@ const format_cisco_sna_syslog = (path, rec) => {
   let sd = '-';  // empty structured data
   let header = `${pri}${version} ${ts} ${hostname} ${app_name} ${procid} ${msgid} ${sd}`
 
-  let tag = `zeek_filename="${sd_escape_value(path)}.log"`
+  let tag = `zeek_filename="${sd_escape_value(zeek_filename_prefix + path)}.log"`
 
   let jsonl = to_json(rec);
 
